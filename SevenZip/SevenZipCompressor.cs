@@ -1233,14 +1233,11 @@ namespace SevenZip
 
                         if (CompressionMode == CompressionMode.Create || !_compressingFilesOnDisk)
                         {
-                            SevenZipLibraryManager.LoadLibrary(this, _archiveFormat);
                             outArchive = SevenZipLibraryManager.OutArchive(_archiveFormat, this);
                         }
                         else
                         {
                             // Create IInArchive, read it and convert to IOutArchive
-                            SevenZipLibraryManager.LoadLibrary(this, Formats.InForOutFormats[_archiveFormat]);
-
                             if ((outArchive = MakeOutArchive(inArchiveStream)) == null)
                             {
                                 return;
@@ -1514,14 +1511,11 @@ namespace SevenZip
 
                         if (CompressionMode == CompressionMode.Create || !_compressingFilesOnDisk)
                         {
-                            SevenZipLibraryManager.LoadLibrary(this, _archiveFormat);
                             outArchive = SevenZipLibraryManager.OutArchive(_archiveFormat, this);
                         }
                         else
                         {
                             // Create IInArchive, read it and convert to IOutArchive
-                            SevenZipLibraryManager.LoadLibrary(
-                                this, Formats.InForOutFormats[_archiveFormat]);
                             if ((outArchive = MakeOutArchive(inArchiveStream)) == null)
                             {
                                 return;
@@ -1588,7 +1582,6 @@ namespace SevenZip
 
             try
             {
-                SevenZipLibraryManager.LoadLibrary(this, _archiveFormat);
                 ISequentialOutStream sequentialArchiveStream;
 
                 using ((sequentialArchiveStream = GetOutStream(outStream)) as IDisposable)
@@ -1695,8 +1688,6 @@ namespace SevenZip
                     {
                         IOutArchive outArchive;
                         // Create IInArchive, read it and convert to IOutArchive
-                        SevenZipLibraryManager.LoadLibrary(
-                            this, Formats.InForOutFormats[_archiveFormat]);
                         if ((outArchive = MakeOutArchive(inArchiveStream)) == null)
                         {
                             return;

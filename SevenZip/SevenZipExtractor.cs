@@ -61,7 +61,6 @@ namespace SevenZip
                 _format = FileChecker.CheckSignature(archiveFullName, out _offset, out isExecutable);
             }
             PreserveDirectoryStructure = true;
-            SevenZipLibraryManager.LoadLibrary(this, _format);
             try
             {
                 _archive = SevenZipLibraryManager.InArchive(_format, this);
@@ -77,16 +76,7 @@ namespace SevenZip
                 {
                     CommonDispose();
                     _format = InArchiveFormat.PE;
-                    SevenZipLibraryManager.LoadLibrary(this, _format);
-                    try
-                    {
-                        _archive = SevenZipLibraryManager.InArchive(_format, this);
-                    }
-                    catch (SevenZipLibraryException)
-                    {
-                        SevenZipLibraryManager.FreeLibrary(this, _format);
-                        throw;
-                    }
+                    _archive = SevenZipLibraryManager.InArchive(_format, this);
                 }
             }
         }
@@ -104,7 +94,6 @@ namespace SevenZip
                 _format = FileChecker.CheckSignature(stream, out _offset, out isExecutable);
             }            
             PreserveDirectoryStructure = true;
-            SevenZipLibraryManager.LoadLibrary(this, _format);
             try
             {
                 _inStream = new ArchiveEmulationStreamProxy(stream, _offset);

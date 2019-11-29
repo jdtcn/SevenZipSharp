@@ -257,6 +257,13 @@ namespace SevenZip
             {
                 return -1;
             }
+
+            // Some plugins are trying to get more streams than files
+            if (index >= _extractor.ArchiveFileData.Count)
+            {
+                return 0;
+            }
+
             _currentIndex = (int)index;
             if (askExtractMode == AskMode.Extract)
             {
