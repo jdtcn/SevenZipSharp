@@ -46,12 +46,3 @@ deploy:
     skip_symbols: false
     on:
       branch: master
-
-  - provider: NuGet
-    server: https://nuget.pkg.github.com/squid-box/index.json
-    artifact: /SevenZip.*\.nupkg/
-    skip_symbols: false
-    api_key:
-      secure: ZPIq0FUw6OnLtQgiASZ014vdxeKzhUhvwH+GGDuDGIJbWBeY0MdWU095B/jgVVAX
-    on:
-      branch: master

@@ -247,7 +247,31 @@
         /// <summary>
         /// CrcError has occured
         /// </summary>
-        CrcError
+        CrcError,
+        /// <summary>
+        /// File is unavailable
+        /// </summary>
+        Unavailable,
+        /// <summary>
+        /// Unexpected end of file
+        /// </summary>
+        UnexpectedEnd,
+        /// <summary>
+        /// Data after end of archive
+        /// </summary>
+        DataAfterEnd,
+        /// <summary>
+        /// File is not archive
+        /// </summary>
+        IsNotArc,
+        /// <summary>
+        /// Archive headers error
+        /// </summary>
+        HeadersError,
+        /// <summary>
+        /// Wrong password
+        /// </summary>
+        WrongPassword
     }
 
     /// <summary>

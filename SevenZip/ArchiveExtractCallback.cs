@@ -453,6 +453,27 @@ namespace SevenZip
                     case OperationResult.UnsupportedMethod:
                         AddException(new ExtractionFailedException("Unsupported method error has occured."));
                         break;
+                    case OperationResult.Unavailable:
+                        AddException(new ExtractionFailedException("File is unavailable."));
+                        break;
+                    case OperationResult.UnexpectedEnd:
+                        AddException(new ExtractionFailedException("Unexpected end of file."));
+                        break;
+                    case OperationResult.DataAfterEnd: 
+                        AddException(new ExtractionFailedException("Data after end of archive."));
+                        break;
+                    case OperationResult.IsNotArc:
+                        AddException(new ExtractionFailedException("File is not archive."));
+                        break;
+                    case OperationResult.HeadersError:
+                        AddException(new ExtractionFailedException("Archive headers error."));
+                        break;
+                    case OperationResult.WrongPassword:
+                        AddException(new ExtractionFailedException("Wrong password."));
+                        break;
+                    default:
+                        AddException(new ExtractionFailedException($"Unexpected operation result: {operationResult}"));
+                        break;
                 }
             }
             else
@@ -466,8 +487,6 @@ namespace SevenZip
                     }
                     catch (ObjectDisposedException) { }
                     _fileStream = null;
-                    GC.Collect();
-                    GC.WaitForPendingFinalizers();
                 }
                 var iea = new FileInfoEventArgs(
                     _extractor.ArchiveFileData[_currentIndex], PercentDoneEventArgs.ProducePercentDone(_doneRate));                
