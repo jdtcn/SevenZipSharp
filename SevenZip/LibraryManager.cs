@@ -9,6 +9,7 @@ namespace SevenZip
     using System.Reflection;
     using System.Runtime.InteropServices;
     using System.Text;
+    using Plugins;
 
 #if UNMANAGED
     /// <summary>
@@ -100,51 +101,58 @@ namespace SevenZip
         }
 
         /// <summary>
-        /// Loads the 7-zip library if necessary and adds user to the reference list
+        /// Loads the 7-zip library (or a plugin) if necessary and adds user to the reference list
         /// </summary>
         /// <param name="user">Caller of the function</param>
         /// <param name="format">Archive format</param>
-        public static void LoadLibrary(object user, Enum format)
+        /// <returns>A handle to the loaded library</returns>
+        private static IntPtr LoadLibrary(object user, Enum format)
         {
-            lock (_syncRoot)
+            if (_inArchives == null || _outArchives == null)
+                Init();
+
+            if (format is InArchiveFormat inArchiveFormat)
             {
-                if (_inArchives == null || _outArchives == null)
-                {
-                    Init();
-                }
+                InitUserInFormat(user, inArchiveFormat);
 
-                if (_modulePtr == IntPtr.Zero)
-                {
-                    if (!File.Exists(_libraryFileName))
-                    {
-                        throw new SevenZipLibraryException("DLL file does not exist.");
-                    }
-                    if ((_modulePtr = NativeMethods.LoadLibrary(_libraryFileName)) == IntPtr.Zero)
-                    {
-                        throw new SevenZipLibraryException($"failed to load library from \"{_libraryFileName}\".");
-                    }
-                    if (NativeMethods.GetProcAddress(_modulePtr, "GetHandlerProperty") == IntPtr.Zero)
-                    {
-                        NativeMethods.FreeLibrary(_modulePtr);
-                        throw new SevenZipLibraryException("library is invalid.");
-                    }
-                }
-
-                if (format is InArchiveFormat archiveFormat)
-                {
-                    InitUserInFormat(user, archiveFormat);
-                    return;
-                }
-
-                if (format is OutArchiveFormat outArchiveFormat)
-                {
-                    InitUserOutFormat(user, outArchiveFormat);
-                    return;
-                }
-
-                throw new ArgumentException(
-                    "Enum " + format + " is not a valid archive format attribute!");
+                return Formats.InFormatGuids.ContainsKey(inArchiveFormat)
+                    ? GetSevenZipLibraryPointer()
+                    : SevenZipPluginManager.GetPluginPointer(inArchiveFormat);
             }
+
+            if (format is OutArchiveFormat outArchiveFormat)
+            {
+                InitUserOutFormat(user, outArchiveFormat);
+
+                return Formats.OutFormatGuids.ContainsKey(outArchiveFormat)
+                    ? GetSevenZipLibraryPointer()
+                    : SevenZipPluginManager.GetPluginPointer(outArchiveFormat);
+            }
+
+            throw new ArgumentException($"Enum {format} is not a valid archive format attribute!");
+        }
+
+        private static IntPtr GetSevenZipLibraryPointer()
+        {
+            if (_modulePtr != IntPtr.Zero)
+                return _modulePtr;
+
+            if (!File.Exists(_libraryFileName))
+                throw new SevenZipLibraryException("DLL file does not exist.");
+
+            if ((_modulePtr = NativeMethods.LoadLibrary(_libraryFileName)) == IntPtr.Zero)
+                throw new SevenZipLibraryException($"failed to load library from \"{_libraryFileName}\".");
+
+            if (NativeMethods.GetProcAddress(_modulePtr, "GetHandlerProperty") == IntPtr.Zero)
+            {
+                NativeMethods.FreeLibrary(_modulePtr);
+                throw new SevenZipLibraryException("library is invalid.");
+            }
+
+            if (_modulePtr == IntPtr.Zero)
+                throw new SevenZipLibraryException();
+
+            return _modulePtr;
         }
 
         /// <summary>
@@ -338,8 +346,6 @@ namespace SevenZip
             sp.Demand();
 
             lock (_syncRoot)
-			{
-                if (_modulePtr != IntPtr.Zero)
             {
                 if (format is InArchiveFormat archiveFormat)
                 {
@@ -348,7 +354,7 @@ namespace SevenZip
                         _inArchives[user][archiveFormat] != null)
                     {
                         try
-                        {                            
+                        {
                             Marshal.ReleaseComObject(_inArchives[user][archiveFormat]);
                         }
                         catch (InvalidComObjectException) {}
@@ -388,12 +394,15 @@ namespace SevenZip
 
                     if (_totalUsers == 0)
                     {
-                        NativeMethods.FreeLibrary(_modulePtr);
-                        _modulePtr = IntPtr.Zero;
+                        if (_modulePtr != IntPtr.Zero)
+                        {
+                            NativeMethods.FreeLibrary(_modulePtr);
+                            _modulePtr = IntPtr.Zero;
+                        }
+                        SevenZipPluginManager.FreeLibrary();
                     }
                 }
             }
-			}
         }
 
         /// <summary>
@@ -405,34 +414,20 @@ namespace SevenZip
         {
             lock (_syncRoot)
             {
+                var modulePtr = LoadLibrary(user, format);
                 if (_inArchives[user][format] == null)
                 {
                     var sp = new SecurityPermission(SecurityPermissionFlag.UnmanagedCode);
                     sp.Demand();
-
-                    if (_modulePtr == IntPtr.Zero)
-                    {
-                        LoadLibrary(user, format);
-
-                        if (_modulePtr == IntPtr.Zero)
-                        {
-                            throw new SevenZipLibraryException();
-                        }
-                    }
-
                     var createObject = (NativeMethods.CreateObjectDelegate)
                         Marshal.GetDelegateForFunctionPointer(
-                            NativeMethods.GetProcAddress(_modulePtr, "CreateObject"),
+                            NativeMethods.GetProcAddress(modulePtr, "CreateObject"),
                             typeof(NativeMethods.CreateObjectDelegate));
-
-                    if (createObject == null)
-                    {
-                        throw new SevenZipLibraryException();
-                    }
                     object result;
                     Guid interfaceId = typeof(IInArchive).GUID;
 
-                    Guid classID = Formats.InFormatGuids[format];
+                    if (!Formats.InFormatGuids.TryGetValue(format, out var classID))
+	                    classID = SevenZipPluginManager.GetInArchiveFormatClassId(format);
 
                     try
                     {
@@ -443,8 +438,8 @@ namespace SevenZip
                         throw new SevenZipLibraryException("Your 7-zip library does not support this archive type.");
                     }
 
-                    InitUserInFormat(user, format);									
-                    _inArchives[user][format] = result as IInArchive;
+                    InitUserInFormat(user, format);
+                    _inArchives[user][format] = (IInArchive)result;
                 }
 
                 return _inArchives[user][format];
@@ -460,17 +455,14 @@ namespace SevenZip
         {
             lock (_syncRoot)
             {
+                var modulePtr = LoadLibrary(user, format);
                 if (_outArchives[user][format] == null)
                 {
                     var sp = new SecurityPermission(SecurityPermissionFlag.UnmanagedCode);
                     sp.Demand();
-                    if (_modulePtr == IntPtr.Zero)
-                    {
-                        throw new SevenZipLibraryException();
-                    }
                     var createObject = (NativeMethods.CreateObjectDelegate)
                         Marshal.GetDelegateForFunctionPointer(
-                            NativeMethods.GetProcAddress(_modulePtr, "CreateObject"),
+                            NativeMethods.GetProcAddress(modulePtr, "CreateObject"),
                             typeof(NativeMethods.CreateObjectDelegate));
                     object result;
                     Guid interfaceId = typeof(IOutArchive).GUID;

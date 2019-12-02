@@ -1,4 +1,6 @@
-﻿namespace SevenZip
+﻿using SevenZip.Plugins;
+
+namespace SevenZip
 {
     using System;
     using System.IO;
@@ -219,6 +221,13 @@
                     return InArchiveFormat.PE;
                 }
             }
+
+            #endregion
+
+            #region Check plugins
+
+            if (SevenZipPluginManager.TryFindPluginFormat(actualSignature, out suspectedFormat))
+                return suspectedFormat;
 
             #endregion
 

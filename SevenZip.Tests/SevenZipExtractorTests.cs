@@ -141,10 +141,10 @@
         [Test]
         public void ThreadedExtractionTest()
         {
-	        var destination1 = Path.Combine(OutputDirectory, "t1");
-	        var destination2 = Path.Combine(OutputDirectory, "t2");
+            var destination1 = Path.Combine(OutputDirectory, "t1");
+            var destination2 = Path.Combine(OutputDirectory, "t2");
 
-			var t1 = new Thread(() =>
+            var t1 = new Thread(() =>
             {
                 using (var tmp = new SevenZipExtractor(@"TestData\multiple_files.7z"))
                 {
@@ -153,8 +153,8 @@
             });
             var t2 = new Thread(() =>
             {
-				using (var tmp = new SevenZipExtractor(@"TestData\multiple_files.7z"))
-				{
+                using (var tmp = new SevenZipExtractor(@"TestData\multiple_files.7z"))
+                {
                     tmp.ExtractArchive(destination2);
                 }
             });
@@ -164,11 +164,114 @@
             t1.Join();
             t2.Join();
 
-			Assert.IsTrue(Directory.Exists(destination1));
-	        Assert.IsTrue(Directory.Exists(destination2));
-			Assert.AreEqual(3, Directory.GetFiles(destination1).Length);
-	        Assert.AreEqual(3, Directory.GetFiles(destination2).Length);
-		}
+            Assert.IsTrue(Directory.Exists(destination1));
+            Assert.IsTrue(Directory.Exists(destination2));
+            Assert.AreEqual(3, Directory.GetFiles(destination1).Length);
+            Assert.AreEqual(3, Directory.GetFiles(destination2).Length);
+        }
+
+        [Test]
+        public void TestExtractFilesWithPlugin()
+        {
+            using (var extractor = new SevenZipExtractor(@"PluginTestData\sample.ad1"))
+            {
+                for (var i = 0; i < extractor.ArchiveFileData.Count; i++)
+                {
+                    extractor.ExtractFiles(OutputDirectory, extractor.ArchiveFileData[i].Index);
+                }
+
+                Assert.AreEqual(1, Directory.GetFiles(OutputDirectory).Length);
+            }
+        }
+
+        [Test]
+        public void TestExtractArchiveWithPlugin()
+        {
+            using (var extractor = new SevenZipExtractor(@"PluginTestData\sample.ad1"))
+            {
+                extractor.ExtractArchive(OutputDirectory);
+            }
+
+            Assert.IsTrue(Directory.Exists(OutputDirectory));
+            Assert.AreEqual(1, Directory.GetFiles(OutputDirectory).Length);
+        }
+
+        [Test]
+        public void TestExtractFilesWithAndWithoutPlugin()
+        {
+            var destination1 = Path.Combine(OutputDirectory, "t1");
+            var destination2 = Path.Combine(OutputDirectory, "t2");
+            using (var tmp = new SevenZipExtractor(@"PluginTestData\sample.ad1"))
+            {
+                for (var i = 0; i < tmp.ArchiveFileData.Count; i++)
+                {
+                    tmp.ExtractFiles(destination1, tmp.ArchiveFileData[i].Index);
+                }
+
+                Assert.AreEqual(1, Directory.GetFiles(destination1).Length);
+            }
+            using (var tmp = new SevenZipExtractor(@"TestData\multiple_files.7z"))
+            {
+                for (var i = 0; i < tmp.ArchiveFileData.Count; i++)
+                {
+                    tmp.ExtractFiles(destination2, tmp.ArchiveFileData[i].Index);
+                }
+
+                Assert.AreEqual(3, Directory.GetFiles(destination2).Length);
+            }
+        }
+
+        [Test]
+        public void TestExtractArchiveWithAndWithoutPlugin()
+        {
+            var destination1 = Path.Combine(OutputDirectory, "t1");
+            var destination2 = Path.Combine(OutputDirectory, "t2");
+            using (var tmp = new SevenZipExtractor(@"PluginTestData\sample.ad1"))
+            {
+                tmp.ExtractArchive(destination1);
+            }
+            using (var tmp = new SevenZipExtractor(@"TestData\multiple_files.7z"))
+            {
+                tmp.ExtractArchive(destination2);
+            }
+
+            Assert.IsTrue(Directory.Exists(destination1));
+            Assert.IsTrue(Directory.Exists(destination2));
+            Assert.AreEqual(1, Directory.GetFiles(destination1).Length);
+            Assert.AreEqual(3, Directory.GetFiles(destination2).Length);
+        }
+
+        [Test]
+        public void TestConcurrentExtractArchiveWithAndWithoutPlugin()
+        {
+            var destination1 = Path.Combine(OutputDirectory, "t1");
+            var destination2 = Path.Combine(OutputDirectory, "t2");
+
+            var t1 = new Thread(() =>
+            {
+                using (var tmp = new SevenZipExtractor(@"PluginTestData\sample.ad1"))
+                {
+                    tmp.ExtractArchive(destination1);
+                }
+            });
+            var t2 = new Thread(() =>
+            {
+                using (var tmp = new SevenZipExtractor(@"TestData\multiple_files.7z"))
+                {
+                    tmp.ExtractArchive(destination2);
+                }
+            });
+
+            t1.Start();
+            t2.Start();
+            t1.Join();
+            t2.Join();
+
+            Assert.IsTrue(Directory.Exists(destination1));
+            Assert.IsTrue(Directory.Exists(destination2));
+            Assert.AreEqual(1, Directory.GetFiles(destination1).Length);
+            Assert.AreEqual(3, Directory.GetFiles(destination2).Length);
+        }
 
         [Test]
         public void ExtractArchiveWithLongPath()

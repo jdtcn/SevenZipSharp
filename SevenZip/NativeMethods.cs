@@ -26,6 +26,9 @@ namespace SevenZip
         [DllImport("kernel32.dll", BestFitMapping = false, ThrowOnUnmappableChar = true)]
         public static extern IntPtr GetProcAddress(IntPtr hModule, [MarshalAs(UnmanagedType.LPStr)] string procName);
 
+        [DllImport("oleaut32.dll")]
+        public static extern int SysStringByteLen(IntPtr bstr);
+
         public static T SafeCast<T>(PropVariant var, T def)
         {
             object obj;
