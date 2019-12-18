@@ -175,11 +175,11 @@
         {
             using (var extractor = new SevenZipExtractor(@"PluginTestData\sample.ad1"))
             {
+                Assert.That(extractor.ArchiveProperties, Has.Exactly(8).Items);
                 for (var i = 0; i < extractor.ArchiveFileData.Count; i++)
                 {
                     extractor.ExtractFiles(OutputDirectory, extractor.ArchiveFileData[i].Index);
                 }
-
                 Assert.AreEqual(1, Directory.GetFiles(OutputDirectory).Length);
             }
         }
@@ -189,6 +189,7 @@
         {
             using (var extractor = new SevenZipExtractor(@"PluginTestData\sample.ad1"))
             {
+                Assert.That(extractor.ArchiveProperties, Has.Exactly(8).Items);
                 extractor.ExtractArchive(OutputDirectory);
             }
 
@@ -203,6 +204,7 @@
             var destination2 = Path.Combine(OutputDirectory, "t2");
             using (var tmp = new SevenZipExtractor(@"PluginTestData\sample.ad1"))
             {
+                Assert.That(tmp.ArchiveProperties, Has.Exactly(8).Items);
                 for (var i = 0; i < tmp.ArchiveFileData.Count; i++)
                 {
                     tmp.ExtractFiles(destination1, tmp.ArchiveFileData[i].Index);
@@ -228,6 +230,7 @@
             var destination2 = Path.Combine(OutputDirectory, "t2");
             using (var tmp = new SevenZipExtractor(@"PluginTestData\sample.ad1"))
             {
+                Assert.That(tmp.ArchiveProperties, Has.Exactly(8).Items);
                 tmp.ExtractArchive(destination1);
             }
             using (var tmp = new SevenZipExtractor(@"TestData\multiple_files.7z"))
@@ -251,6 +254,7 @@
             {
                 using (var tmp = new SevenZipExtractor(@"PluginTestData\sample.ad1"))
                 {
+                    Assert.That(tmp.ArchiveProperties, Has.Exactly(8).Items);
                     tmp.ExtractArchive(destination1);
                 }
             });
