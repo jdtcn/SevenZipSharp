@@ -27,8 +27,8 @@
     <Product>SevenZipSharp</Product>
     <Description>7-zip native library wrapper</Description>
     <Copyright>Copyright (C) Markovtsev Vadim 2009, 2010, licenced under LGPLv3</Copyright>
-    <AssemblyVersion>1.2.232.3</AssemblyVersion>
-    <FileVersion>1.2.232.3</FileVersion>
+    <AssemblyVersion>1.2.232.4</AssemblyVersion>
+    <FileVersion>1.2.232.4</FileVersion>
     <IntermediateOutputPath>..\Stage\obj\$(Configuration)\</IntermediateOutputPath>
     <OutputPath>..\Stage\$(Configuration)\</OutputPath>
     <RegisterForComInterop>false</RegisterForComInterop>
